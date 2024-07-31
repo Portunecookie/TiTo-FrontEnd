@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
+
 import 'package:tito_app/core/api/multpart_file_with_to_json.dart';
 import 'package:tito_app/src/data/models/login_info.dart';
 import 'package:tito_app/src/data/models/auth_response.dart';
@@ -27,6 +28,9 @@ abstract class ApiService {
 
   @POST("auth/sign-in")
   Future<AuthResponse> signIn(@Body() Map<String, dynamic> loginData);
+
+  @POST("oauth/google")
+  Future<AuthResponse> oAuthGoogle(@Body() Map<String, dynamic> loginData);
 
   @GET("users")
   Future<LoginInfo> getUserInfo();

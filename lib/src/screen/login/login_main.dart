@@ -5,6 +5,8 @@ import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:tito_app/core/api/api_service.dart';
+import 'package:tito_app/core/api/dio_client.dart';
 import 'package:tito_app/core/constants/style.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -55,7 +57,7 @@ class LoginMain extends StatelessWidget {
       debugPrint("pushpush");
 
       try {
-        log("pushed");
+        // & Phase 1. 구글에서 Token 받아옴
         final AuthorizationTokenResponse? result =
             await appAuth.authorizeAndExchangeCode(
           AuthorizationTokenRequest(
@@ -69,28 +71,30 @@ class LoginMain extends StatelessWidget {
         if (result != null) {
           final String accessToken = result.accessToken!;
           final String idToken = result.idToken!;
-          debugPrint(accessToken);
-          debugPrint("pushpush");
-          debugPrint(idToken);
-          debugPrint("pushpush");
 
-          // Phase 1. SecureStorage에 token 저장
+          // & Phase 2. SecureStorage에 token 저장
           await secureStorage.write(key: 'access_token', value: accessToken);
           await secureStorage.write(key: 'id_token', value: idToken);
 
-          debugPrint("시큐어 씀");
-          debugPrint(await secureStorage.read(key: 'access_token'));
-          debugPrint(await secureStorage.read(key: 'id_token'));
+          debugPrint("토큰 도착 $accessToken");
 
-          // Phase 2. Backend에 토큰 보내서 확인받음
-          // TODO: Code here
+          // & Phase 3. Backend에 토큰 보내서 확인받음
+          final authResponse = await ApiService(DioClient.dio)
+              .oAuthGoogle({accessToken: accessToken});
+          debugPrint("오어스를 토대로한 엑세스 토큰 도착");
 
-          // Phase 3. 성공한 경우
-          // Case 3.1. 최초 회원인 경우 부족한 정보 작성 페이지로 이동
-          // TODO: Code here
+          // & Phase 3. 성공한 경우 마이데이터 조회, nickname 유무 확인
+          await DioClient.setToken(authResponse.accessToken.token);
+          // Case 3.1. 마이데이터 조회 결과 nickname이 null인 경우 해당 페이지로 이동
+          final userInfo = await ApiService(DioClient.dio).getUserInfo();
+          if (userInfo.nickname == "") {
+            debugPrint('NEW : empty user nickname');
+          }
 
           // Case 3.2. 기존 회원인 경우 메인 페이지로 리다이렉트
-          // TODO: Code here
+          else {
+            debugPrint("OLD : go to main");
+          }
         }
       } catch (e) {
         // 에러 처리
@@ -108,7 +112,7 @@ class LoginMain extends StatelessWidget {
         await secureStorage.write(key: 'id_token', value: token.idToken);
 
         // Phase 2. Backend에 토큰 보내서 확인받음
-        // TODO: Code here
+        //
 
         // Phase 3. 성공한 경우
         // Case 3.1. 최초 회원인 경우
